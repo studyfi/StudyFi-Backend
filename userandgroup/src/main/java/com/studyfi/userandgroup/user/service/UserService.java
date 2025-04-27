@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -162,6 +163,18 @@ public class UserService {
         userRepo.save(user);
         groupRepo.save(group);
     }
+
+    public List<Integer> getUsersByGroupId(Integer groupId) {
+        Group group = groupRepo.findById(groupId).orElseThrow(() -> new RuntimeException("Group not found"));
+        List<Integer> userIds = new ArrayList<>();
+
+        for (User user : group.getUsers()) {
+            userIds.add(user.getId());
+        }
+
+        return userIds;
+    }
+
 
     private boolean isValidEmail(String email) {
         String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";  // Simple regex to validate email format

@@ -5,6 +5,8 @@ import com.studyfi.userandgroup.group.model.Group;
 import com.studyfi.userandgroup.group.repo.GroupRepo;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.config.Configuration;
+import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,11 @@ public class GroupService {
     @Autowired  // Use this annotation to tell Spring to inject dependencies
     public GroupService(GroupRepo groupRepo, ModelMapper modelMapper) {
         this.groupRepo = groupRepo;
+        modelMapper.getConfiguration()
+                .setMatchingStrategy(MatchingStrategies.STRICT)
+                .setFieldMatchingEnabled(true)
+                .setSkipNullEnabled(true)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE);
         this.modelMapper = modelMapper;
     }
 
@@ -33,9 +40,19 @@ public class GroupService {
     public GroupDTO updateGroup(Integer groupId, GroupDTO groupDTO) {
         Group group = groupRepo.findById(groupId).orElseThrow(() -> new RuntimeException("Group not found"));
         group.setName(groupDTO.getName());
+        group.setImageUrl(groupDTO.getImageUrl());
         group.setDescription(groupDTO.getDescription());
         groupRepo.save(group);
         return modelMapper.map(group, GroupDTO.class);
+    }
+
+    // Validate group existence for a list of group IDs
+    public void validateGroupExistence(List<Integer> groupIds) {
+        for (Integer groupId : groupIds) {
+            try{
+                getGroupById(groupId);
+            }catch (RuntimeException e){ throw e;}
+        }
     }
 
     // Get all groups
