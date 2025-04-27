@@ -1,13 +1,47 @@
 package com.studyfi.notification.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class NotificationDTO {
-    private int id;
-    private String name;
+    private Integer id;
+    private String message;
+    private Integer userId;
+
+    // Constructors
+    public NotificationDTO() {
+    }
+
+    public NotificationDTO(String message, Integer userId) {
+        this.message = message;
+        this.userId = userId;
+    }
+
+    public NotificationDTO(Integer id, String message, Integer userId) {
+        this.id = id;
+        this.message = message;
+        this.userId = userId;
+    }
+
+    // Getters and Setters
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
 }

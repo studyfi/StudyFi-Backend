@@ -4,6 +4,7 @@ public class GroupDTO {
     private Integer id;
     private String name;
     private String description;
+    private String imageUrl;
 
     // Getter and Setter methods
     public Integer getId() {
@@ -28,5 +29,13 @@ public class GroupDTO {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

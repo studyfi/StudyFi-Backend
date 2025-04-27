@@ -1,6 +1,5 @@
 package com.studyfi.notification.controller;
 
-import com.studyfi.notification.dto.NotificationDTO;
 import com.studyfi.notification.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -9,18 +8,17 @@ import java.util.List;
 
 @RestController
 @CrossOrigin
-@RequestMapping(value = "api/v1")
+@RequestMapping("/notifications")
 public class NotificationController {
     @Autowired
     private NotificationService notificationService;
 
     @GetMapping("/getnotifications")
-    public List<NotificationDTO> getNotifications(){
+    public List<com.studyfi.notification.dto.NotificationDTO> getNotifications(){
         return notificationService.getAllNotifications();
     }
-
     @PostMapping("/addnotification")
-    public NotificationDTO saveUser(@RequestBody NotificationDTO notificationDTO){
-        return notificationService.saveNotification(notificationDTO);
+    public void addNotification(@RequestBody java.util.Map<String, Object> payload){
+        notificationService.sendNotificationToGroup((String) payload.get("message"), (List<Integer>) payload.get("groupIds"));
     }
 }

@@ -19,6 +19,9 @@ public class Group {
 
     private String description;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @ManyToMany(mappedBy = "groups")
     private List<User> users; // Many-to-many relationship with User
 
@@ -53,5 +56,13 @@ public class Group {
 
     public void setUsers(List<User> users) {
         this.users = users;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }
