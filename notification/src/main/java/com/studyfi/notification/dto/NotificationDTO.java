@@ -3,6 +3,7 @@ package com.studyfi.notification.dto;
 public class NotificationDTO {
     private Integer id;
     private String message;
+    private boolean read;
     private Integer userId;
 
     // Constructors
@@ -15,6 +16,12 @@ public class NotificationDTO {
     }
 
     public NotificationDTO(Integer id, String message, Integer userId) {
+        this.id = id;
+        this.message = message;
+        this.read = false;
+        this.userId = userId;
+    }
+    public NotificationDTO(Integer id, String message, boolean read, Integer userId) {
         this.id = id;
         this.message = message;
         this.userId = userId;
@@ -35,6 +42,14 @@ public class NotificationDTO {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public boolean isRead() {
+        return read;
+    }
+
+    public void setRead(boolean read) {
+        this.read = read;
     }
 
     public Integer getUserId() {

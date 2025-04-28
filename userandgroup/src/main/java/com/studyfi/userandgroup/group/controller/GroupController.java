@@ -1,6 +1,6 @@
 package com.studyfi.userandgroup.group.controller;
 
-import com.studyfi.userandgroup.group.service.CloudinaryService;
+import com.studyfi.userandgroup.service.CloudinaryService;
 import com.studyfi.userandgroup.group.dto.GroupDTO;
 import com.studyfi.userandgroup.group.service.GroupService;
 import com.studyfi.userandgroup.user.service.UserService;

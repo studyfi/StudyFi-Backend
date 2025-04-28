@@ -77,7 +77,7 @@ public class NewsService {
             notificationPayload.put("groupIds", groupIds);
 
             webClientBuilder.build().post()
-                    .uri(notificationBaseUrl + "/notifications/group")
+                    .uri(notificationBaseUrl + "/notifications/addnotification")
                     .bodyValue(notificationPayload)
                     .retrieve().bodyToMono(Void.class).block();
         }catch (Exception e) {
