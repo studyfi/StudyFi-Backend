@@ -8,13 +8,16 @@ import com.studyfi.userandgroup.user.repo.UserRepo;
 import com.studyfi.userandgroup.group.repo.GroupRepo;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.modelmapper.config.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.Optional;
 
 import java.util.Date;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -26,12 +29,16 @@ public class UserService {
     private final GroupRepo groupRepo;
     private final ModelMapper modelMapper;
     private final BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    public UserService(UserRepo userRepo, GroupRepo groupRepo, ModelMapper modelMapper, BCryptPasswordEncoder passwordEncoder) {
+    public UserService(UserRepo userRepo, GroupRepo groupRepo, ModelMapper modelMapper, BCryptPasswordEncoder passwordEncoder)
+    {
         this.userRepo = userRepo;
         this.groupRepo = groupRepo;
         this.modelMapper = modelMapper;
+        modelMapper.getConfiguration()
+                .setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE);
+
+
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -42,6 +49,21 @@ public class UserService {
     private JavaMailSender mailSender; // autowired JavaMailSender
 
     // Register a new user
+    public UserDTO login(String email, String password) {
+        // Find the user by email
+        User user = userRepo.findByEmail(email);
+        if (user == null) {
+            throw new RuntimeException("Invalid email or password");
+        }
+
+        // Check if the password is correct
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid email or password");
+        }
+
+        // Return the UserDTO
+        return modelMapper.map(user, UserDTO.class);
+    }
     public UserDTO registerUser(UserDTO userDTO) {
         // Validate password for registration
         validatePassword(userDTO.getPassword());
@@ -129,25 +151,31 @@ public class UserService {
 
     // Update user profile
     public UserDTO updateUserProfile(Integer userId, UserDTO userDTO) {
-        // Fetch the existing user from the database
-        User user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepo.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
+
+        // Check if a new profile image URL is provided
+        if (userDTO.getProfileImageUrl() != null) {
+            user.setProfileImageUrl(userDTO.getProfileImageUrl());
+        } else {
+            // Keep the old profile image URL
+        }
+
+        // Check if a new cover image URL is provided
+        if (userDTO.getCoverImageUrl() != null) {
+            user.setCoverImageUrl(userDTO.getCoverImageUrl());
+        } else {
+            // Keep the old cover image URL
+        }
 
         // Update the user fields with new data
-        user.setName(userDTO.getName());
-        user.setEmail(userDTO.getEmail());
-
+        modelMapper.map(userDTO, user);
         // Validate the new password before updating it
         validatePassword(userDTO.getPassword());
         // Encrypt the password before saving
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
-        user.setPhoneContact(userDTO.getPhoneContact());
-        user.setBirthDate(userDTO.getBirthDate());
-        user.setCountry(userDTO.getCountry());
-        user.setAboutMe(userDTO.getAboutMe());
-        user.setCurrentAddress(userDTO.getCurrentAddress());
 
-        // Save the updated user to the repository
+        // Save the updated user
         userRepo.save(user);
         return modelMapper.map(user, UserDTO.class);
     }

@@ -1,4 +1,4 @@
-package com.studyfi.userandgroup.group.service;
+package com.studyfi.userandgroup.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;

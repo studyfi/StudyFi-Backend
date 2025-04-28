@@ -16,6 +16,10 @@ public class Notification {
     @Column(name = "user_id")
     private Integer userId;
 
+    @Column(name = "is_read")
+    private Boolean read = false;
+
+
     // Constructors
 
     public Notification() {
@@ -56,5 +60,13 @@ public class Notification {
 
     public void setUserId(Integer userId) {
         this.userId = userId;
+    }
+
+    public Boolean isRead() {
+        return read;
+    }
+
+    public void setRead(boolean read) {
+        this.read = read;
     }
 }

@@ -10,6 +10,8 @@ public class UserDTO {
     private String country;
     private String aboutMe;
     private String currentAddress;
+    private String profileImageUrl;
+    private String coverImageUrl;
 
     // Getter and Setter methods
     public Integer getId() {
@@ -82,5 +84,21 @@ public class UserDTO {
 
     public void setCurrentAddress(String currentAddress) {
         this.currentAddress = currentAddress;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public String getCoverImageUrl() {
+        return coverImageUrl;
+    }
+
+    public void setCoverImageUrl(String coverImageUrl) {
+        this.coverImageUrl = coverImageUrl;
     }
 }

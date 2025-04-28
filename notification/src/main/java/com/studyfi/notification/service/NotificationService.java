@@ -6,7 +6,10 @@ import com.studyfi.notification.repo.NotificationRepo;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
+import org.modelmapper.internal.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
@@ -27,12 +30,21 @@ public class NotificationService {
     @Autowired
     private WebClient webClient;
 
+    public NotificationService(ModelMapper modelMapper){
+        this.modelMapper = modelMapper;
+        this.modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+        this.modelMapper.createTypeMap(Notification.class, NotificationDTO.class)
+                .addMapping(Notification::isRead, NotificationDTO::setRead);
+        this.modelMapper.createTypeMap(NotificationDTO.class, Notification.class)
+                .addMapping(NotificationDTO::isRead, Notification::setRead);
+    }
+
     public List<NotificationDTO> getAllNotifications(){
         List<Notification> notificationList = notificationRepo.findAll();
         return modelMapper.map(notificationList, new TypeToken<List<NotificationDTO>>(){}.getType());
     }
 
-    public NotificationDTO sendNotification(NotificationDTO notificationDTO){
+    public NotificationDTO sendNotification(NotificationDTO notificationDTO) {
         try{
             Notification notification = modelMapper.map(notificationDTO, Notification.class);
             Notification savedNotification = notificationRepo.save(notification);
@@ -41,6 +53,12 @@ public class NotificationService {
             System.out.println("Error saving notification");
             return null;
         }
+    }
+    public List<NotificationDTO> getUserNotifications(Integer userId) {
+        List<Notification> notificationList = notificationRepo.findByUserId(userId);
+
+        return modelMapper.map(notificationList, new TypeToken<List<NotificationDTO>>() {
+        }.getType());
     }
 
     public void sendNotificationToGroup(String message, List<Integer> groupIds) {
@@ -73,6 +91,7 @@ public class NotificationService {
                             NotificationDTO notificationDTO = new NotificationDTO();
                             notificationDTO.setMessage(message);
                             notificationDTO.setUserId(userId);
+                            notificationDTO.setRead(false);
                             sendNotification(notificationDTO);
                         } catch (Exception e) {
                             System.err.println("Error sending notification to user: " + userId);
