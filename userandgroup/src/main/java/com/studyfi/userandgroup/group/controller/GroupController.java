@@ -91,5 +91,11 @@ public class GroupController {
         return userService.getUsersByGroupId(groupId);
     }
 
+    //Get groups for a user.
+    @GetMapping("/user/{userId}")
+    public List<GroupDTO> getGroupsByUser(@PathVariable Integer userId) {
+        return groupService.getGroupsByUser(userId);
+    }
+
 
 }
