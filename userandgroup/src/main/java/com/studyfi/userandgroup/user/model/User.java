@@ -49,7 +49,7 @@ public class User {
     @Column(name = "reset_token_expiry")
     private Date resetTokenExpiry;  // The expiration time of the reset token
 
-    @ManyToMany()
+    @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
             name = "user_group",
             joinColumns = @JoinColumn(name = "user_id"),
