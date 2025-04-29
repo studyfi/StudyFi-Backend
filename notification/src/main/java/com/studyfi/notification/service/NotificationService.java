@@ -69,7 +69,7 @@ public class NotificationService {
                 // Get users by group
                 List<Integer> userIds;
                 try {
-                    String url = String.format("http://localhost:8082/groups/%s/users", groupId);
+                    String url = String.format("http://userandgroup/groups/%s/users", groupId);
                     Mono<List<Integer>> response = webClientBuilder.build().get()
                             .uri(url)
                             .retrieve()

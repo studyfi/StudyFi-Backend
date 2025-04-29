@@ -32,10 +32,10 @@ public class NewsService {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
-    @Value("${userandgroup.base.url:http://localhost:8082}")
+    @Value("${userandgroup.base.url:http://userandgroup}")
     private String userandgroupBaseUrl;
 
-    @Value("${notification.base.url:http://localhost:8081}")
+    @Value("${notification.base.url:http://notification}")
     private String notificationBaseUrl;
 
     private void validateGroups(List<Integer> groupIds) {
