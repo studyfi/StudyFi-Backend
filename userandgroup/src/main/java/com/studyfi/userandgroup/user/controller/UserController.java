@@ -24,8 +24,6 @@ public class UserController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
-
-
     // Register a new user
     @PostMapping(value= "/register" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // Changed mapping to /register
     public UserDTO registerUser(
@@ -37,8 +35,8 @@ public class UserController {
             @RequestParam("country") String country,
             @RequestParam("aboutMe") String aboutMe,
             @RequestParam("currentAddress") String currentAddress,
-            @RequestParam("profileFile") MultipartFile profileFile,
-            @RequestParam("coverFile") MultipartFile coverFile) throws Exception {
+            @RequestParam(value = "profileFile", required = false) MultipartFile profileFile,
+            @RequestParam(value = "coverFile", required = false) MultipartFile coverFile) throws Exception {
         UserDTO userDTO = new UserDTO();
         userDTO.setName(name);
         userDTO.setEmail(email);
@@ -48,8 +46,13 @@ public class UserController {
         userDTO.setCountry(country);
         userDTO.setAboutMe(aboutMe);
         userDTO.setCurrentAddress(currentAddress);
-        userDTO.setProfileImageUrl(cloudinaryService.uploadFile(profileFile));
-        userDTO.setCoverImageUrl(cloudinaryService.uploadFile(coverFile));
+        if (profileFile != null) {
+            userDTO.setProfileImageUrl(cloudinaryService.uploadFile(profileFile));
+        }
+        if (coverFile != null) {
+            userDTO.setCoverImageUrl(cloudinaryService.uploadFile(coverFile));
+        }
+
         return userService.registerUser(userDTO);
     }
 

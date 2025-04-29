@@ -58,7 +58,7 @@ class UserandgroupApplicationTests {
 		groupDTO.setImageUrl("http://example.com/image.jpg");
 		when(groupService.createGroup(any(GroupDTO.class))).thenReturn(groupDTO);
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/groups/create")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/groups/create")
 						.file(file)
 						.param("name", "Test Group")
 						.param("description", "Test Description"))
@@ -74,7 +74,7 @@ class UserandgroupApplicationTests {
 		groupDTO.setImageUrl("http://example.com/image.jpg");
 		when(groupService.updateGroup(eq(1), any(GroupDTO.class))).thenReturn(groupDTO);
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/groups/update/1")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/groups/update/1")
 						.file(file)
 						.param("name", "Updated Group")
 						.param("description", "Updated Description")
@@ -93,7 +93,7 @@ class UserandgroupApplicationTests {
 		groupDTO.setDescription("Test Description");
 		when(groupService.getAllGroups()).thenReturn(Collections.singletonList(groupDTO));
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/groups/all"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/groups/all"))
 				.andExpect(status().isOk()); // Expect 200 for successful retrieval
 	}
 
@@ -104,21 +104,21 @@ class UserandgroupApplicationTests {
 		groupDTO.setDescription("Test Description");
 		when(groupService.getGroupById(1)).thenReturn(groupDTO);
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/groups/1"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/groups/1"))
 				.andExpect(status().isOk()); // Expect 200 for successful retrieval
 	}
 
 	@Test
 	public void testGetUsersByGroup() throws Exception {
 		when(userService.getUsersByGroupId(1)).thenReturn(Arrays.asList(1, 2));
-		mockMvc.perform(MockMvcRequestBuilders.get("/groups/1/users"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/groups/1/users"))
 				.andExpect(status().isOk());
 	}
 
 	@Test
 	public void testGetGroupsByUser() throws Exception {
 		when(groupService.getGroupsByUser(1)).thenReturn(Collections.singletonList(new GroupDTO()));
-		mockMvc.perform(MockMvcRequestBuilders.get("/groups/user/1"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/groups/user/1"))
 				.andExpect(status().isOk());
 	}
 
@@ -129,7 +129,7 @@ class UserandgroupApplicationTests {
 		UserDTO userDTO = new UserDTO();
 		userDTO.setEmail("test@test.com");
 		when(userService.registerUser(any(UserDTO.class))).thenReturn(userDTO);
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/users/register")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/users/register")
 						.file(profileFile)
 						.file(coverFile)
 						.param("name", "Test User")
@@ -146,7 +146,7 @@ class UserandgroupApplicationTests {
 	@Test
 	public void testLogin() throws Exception {
 		when(userService.login(eq("test@test.com"), eq("password"))).thenReturn(new UserDTO());
-		mockMvc.perform(MockMvcRequestBuilders.post("/users/login")
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users/login")
 						.param("email", "test@test.com")
 						.param("password", "password"))
 				.andExpect(status().isOk());
@@ -155,14 +155,14 @@ class UserandgroupApplicationTests {
 	@Test
 	public void testGetAllUsers() throws Exception {
 		when(userService.getAllUsers()).thenReturn(Collections.singletonList(new UserDTO()));
-		mockMvc.perform(MockMvcRequestBuilders.get("/users/getusers"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/getusers"))
 				.andExpect(status().isOk());
 	}
 
 	@Test
 	public void testGetUserById() throws Exception {
 		when(userService.getUserById(1)).thenReturn(new UserDTO());
-		mockMvc.perform(MockMvcRequestBuilders.get("/users/1"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/1"))
 				.andExpect(status().isOk());
 	}
 
@@ -170,7 +170,7 @@ class UserandgroupApplicationTests {
 	public void testResetPassword() throws Exception {
 		PasswordResetDTO passwordResetDTO = new PasswordResetDTO();
 		passwordResetDTO.setNewPassword("newPassword");
-		mockMvc.perform(MockMvcRequestBuilders.post("/users/reset-password")
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users/reset-password")
 						.param("token", "validToken")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("{\"password\":\"newPassword\"}"))
@@ -179,7 +179,7 @@ class UserandgroupApplicationTests {
 
 	@Test
 	public void testForgotPassword() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/users/forgot-password")
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users/forgot-password")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("{\"email\":\"test@test.com\"}"))
 				.andExpect(status().isOk());
@@ -199,7 +199,7 @@ class UserandgroupApplicationTests {
 		userDTO.setCurrentAddress("here");
 		when(userService.updateUserProfile(eq(1), any(UserDTO.class))).thenReturn(userDTO);
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/users/profile/1")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/users/profile/1")
 						.file(profileFile)
 						.file(coverFile)
 						.param("name", "some")
@@ -220,7 +220,7 @@ class UserandgroupApplicationTests {
 
 	@Test
 	public void testAddUserToGroup() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/users/addToGroup")
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users/addToGroup")
 						.param("userId", "1")
 						.param("groupId", "1"))
 				.andExpect(status().isOk());
