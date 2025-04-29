@@ -4,6 +4,7 @@ import com.studyfi.contentandnews.dto.NewsDTO;
 import com.studyfi.contentandnews.model.News;
 import com.studyfi.contentandnews.service.NewsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,14 +13,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/news")
+@RequestMapping("/api/v1/news")
 public class NewsController {
 
     @Autowired
     private NewsService newsService;
 
     // Endpoint to post news with optional image
-    @PostMapping("/post")
+    @PostMapping(value = "/post", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public NewsDTO postNews(@RequestParam String headline,
                             @RequestParam String contentText,
                             @RequestParam String author,

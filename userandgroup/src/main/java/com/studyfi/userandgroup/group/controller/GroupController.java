@@ -17,7 +17,7 @@ import java.io.IOException;
 @RestController
 @ControllerAdvice
 @CrossOrigin
-@RequestMapping("/groups")
+@RequestMapping("/api/v1/groups")
 public class GroupController {
 
     @Autowired

@@ -7,6 +7,7 @@ import com.studyfi.userandgroup.user.dto.UserDTO;
 import com.studyfi.userandgroup.user.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,7 +15,7 @@ import java.util.List;
 
 @RestController
 @CrossOrigin
-@RequestMapping("/users")
+@RequestMapping("/api/v1/users")
 public class UserController {
 
     @Autowired
@@ -26,7 +27,7 @@ public class UserController {
 
 
     // Register a new user
-    @PostMapping("/register") // Changed mapping to /register
+    @PostMapping(value= "/register" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // Changed mapping to /register
     public UserDTO registerUser(
             @RequestParam("name") String name,
             @RequestParam("email") String email,
@@ -86,7 +87,7 @@ public class UserController {
 
     //Update user profile
 
-    @PutMapping("/profile/{userId}")
+    @PutMapping(value="/profile/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UserDTO updateProfile(
             @PathVariable Integer userId,
             @RequestParam("name") String name,

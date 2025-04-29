@@ -42,7 +42,7 @@ public class NewsService {
         String groupIdsString = groupIds.stream().map(Object::toString).collect(Collectors.joining("&groupIds="));
 
         webClientBuilder.build().get()
-                .uri(userandgroupBaseUrl + "/groups/validate?groupIds=" + groupIdsString)
+                .uri(userandgroupBaseUrl + "/api/v1/groups/validate?groupIds=" + groupIdsString)
                 .retrieve()
                 .onStatus(HttpStatus.NOT_FOUND::equals, response -> Mono.error(new RuntimeException("Invalid groups")))
                 .bodyToMono(Void.class)
@@ -77,7 +77,7 @@ public class NewsService {
             notificationPayload.put("groupIds", groupIds);
 
             webClientBuilder.build().post()
-                    .uri(notificationBaseUrl + "/notifications/addnotification")
+                    .uri(notificationBaseUrl + "/api/v1/notifications/addnotification")
                     .bodyValue(notificationPayload)
                     .retrieve().bodyToMono(Void.class).block();
         }catch (Exception e) {
