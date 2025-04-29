@@ -1,4 +1,4 @@
-package com.studyfi.contentandnews;
+package com.studyfi.contentandnews.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
