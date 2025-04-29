@@ -28,7 +28,7 @@ public class NotificationService {
     private ModelMapper modelMapper;
 
     @Autowired
-    private WebClient webClient;
+    private WebClient.Builder webClientBuilder;
 
     public NotificationService(ModelMapper modelMapper){
         this.modelMapper = modelMapper;
@@ -69,8 +69,8 @@ public class NotificationService {
                 // Get users by group
                 List<Integer> userIds;
                 try {
-                    String url = String.format("http://localhost:8082/groups/%s/users", groupId);
-                    Mono<List<Integer>> response = webClient.get()
+                    String url = String.format("http://apigateway/api/v1/groups/%s/users", groupId);
+                    Mono<List<Integer>> response = webClientBuilder.build().get()
                             .uri(url)
                             .retrieve()
                             .bodyToMono(new ParameterizedTypeReference<List<Integer>>() {});

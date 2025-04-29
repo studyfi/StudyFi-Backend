@@ -30,9 +30,8 @@ public class ContentService {
                     .get()
                     .uri(uriBuilder -> uriBuilder
                             .scheme("http")
-                            .host("localhost")
-                            .port(8082)
-                            .path("/groups/validate")
+                            .host("apigateway")
+                            .path("/api/v1/groups/validate")
                             .queryParam("groupIds", groupIds.toArray())
                             .build())
                     .retrieve()
@@ -67,7 +66,7 @@ public class ContentService {
         try {
             webClientBuilder.build()
                     .post()
-                    .uri("http://localhost:8081/notifications/addnotification")
+                    .uri("http://apigateway/api/v1/notifications/addnotification")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(java.util.Map.of("message", "New content: " + title, "groupIds", groupIds))
                     .retrieve()

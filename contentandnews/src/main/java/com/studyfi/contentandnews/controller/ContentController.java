@@ -4,6 +4,7 @@ import com.studyfi.contentandnews.dto.ContentDTO;
 import com.studyfi.contentandnews.model.Content;
 import com.studyfi.contentandnews.service.ContentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,14 +13,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/content")
+@RequestMapping("/api/v1/content")
 public class ContentController {
 
     @Autowired
     private ContentService contentService;
 
     // Endpoint to upload new content with file
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ContentDTO uploadContent(@RequestParam String title,
                                     @RequestParam String contentText,
                                     @RequestParam String author,
