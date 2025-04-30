@@ -1,19 +1,20 @@
 package com.studyfi.notification.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.studyfi.notification.dto.NotificationDTO;
 import com.studyfi.notification.model.Notification;
 import com.studyfi.notification.repo.NotificationRepo;
 import jakarta.transaction.Transactional;
+import org.modelmapper.internal.bytebuddy.asm.Advice;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
-import org.modelmapper.internal.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
-import java.util.ArrayList;
 import org.springframework.core.ParameterizedTypeReference;
 import reactor.core.publisher.Mono;
 
@@ -30,6 +31,9 @@ public class NotificationService {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public NotificationService(ModelMapper modelMapper){
         this.modelMapper = modelMapper;
         this.modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
@@ -44,16 +48,32 @@ public class NotificationService {
         return modelMapper.map(notificationList, new TypeToken<List<NotificationDTO>>(){}.getType());
     }
 
+    public List<NotificationDTO> getLatestUserNotifications(Integer userId) {
+        List<Notification> notifications = notificationRepo.findTop10ByUserIdOrderByTimestampDesc(userId);
+        return convertToDTOs(notifications);
+    }
+    private List<NotificationDTO> convertToDTOs(List<Notification> notifications) {
+        return modelMapper.map(notifications, new TypeToken<List<NotificationDTO>>() {}.getType());
+    }
+
     public NotificationDTO sendNotification(NotificationDTO notificationDTO) {
-        try{
+        try {
             Notification notification = modelMapper.map(notificationDTO, Notification.class);
             Notification savedNotification = notificationRepo.save(notification);
             return modelMapper.map(savedNotification, NotificationDTO.class);
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Error saving notification");
             return null;
         }
     }
+    public void markAllAsRead(Integer userId) {
+        List<Notification> unreadNotifications = notificationRepo.findByUserIdAndIsReadFalse(userId);
+        for (Notification notification : unreadNotifications) {
+            notification.setRead(true);
+        }
+        notificationRepo.saveAll(unreadNotifications);
+    }
+
     public List<NotificationDTO> getUserNotifications(Integer userId) {
         List<Notification> notificationList = notificationRepo.findByUserId(userId);
 
@@ -63,47 +83,63 @@ public class NotificationService {
 
     public void sendNotificationToGroup(String message, List<Integer> groupIds) {
         for (Integer groupId : groupIds) {
+            System.out.println("Entering sendNotificationToGroup for groupId: " + groupId);
+
+            // Get users by group
+            List<Integer> userIds;
             try {
-                System.out.println("Entering sendNotificationToGroup for groupId: " + groupId);
-
-                // Get users by group
-                List<Integer> userIds;
-                try {
-                    String url = String.format("http://apigateway/api/v1/groups/%s/users", groupId);
-                    Mono<List<Integer>> response = webClientBuilder.build().get()
-                            .uri(url)
-                            .retrieve()
-                            .bodyToMono(new ParameterizedTypeReference<List<Integer>>() {});
-                    userIds = response.block();
-                    System.out.println("Users by group: " + userIds);
-                } catch (Exception e) {
-                    System.out.println("Error in getUsersByGroup method: " + e);
-                    userIds = List.of();
-                }
-
-                //Send a notification for each user
-                if (userIds == null) {
-                    userIds = new ArrayList<>();
-                }
-                if (userIds != null) {
-                    for (Integer userId : userIds) {
-                        try {
-                            NotificationDTO notificationDTO = new NotificationDTO();
-                            notificationDTO.setMessage(message);
-                            notificationDTO.setUserId(userId);
-                            notificationDTO.setRead(false);
-                            sendNotification(notificationDTO);
-                        } catch (Exception e) {
-                            System.err.println("Error sending notification to user: " + userId);
-                            e.printStackTrace();
-                        }
-                    }
-                }
+                String url = String.format("http://apigateway/api/v1/groups/%s/users", groupId);
+                Mono<List<Integer>> response = webClientBuilder.build().get()
+                        .uri(url)
+                        .exchangeToMono(clientResponse -> {
+                            if (clientResponse.statusCode().isError()) {
+                                System.out.println("ERROR: Users by group");
+                                return Mono.just(List.of());
+                            } else {
+                                return clientResponse.bodyToMono(new ParameterizedTypeReference<List<Integer>>() {
+                                });
+                            }
+                        });
+                userIds = response.block();
+                System.out.println("Users by group: " + userIds);
             } catch (Exception e) {
-                System.err.println("Error in sendNotificationToGroup for groupId: " + groupId);
-                e.printStackTrace();
+                System.out.println("Error in getUsersByGroup method: " + e);
+                userIds = List.of();
             }
 
+            if (userIds != null) {
+                for (Integer userId : userIds) {
+                    NotificationDTO notificationDTO = new NotificationDTO();
+                    String groupName = "";
+                    try {
+                        String urlGroupName = String.format("http://apigateway/api/v1/groups/%s", groupId);
+                        groupName = webClientBuilder.build().get().uri(urlGroupName)
+                                .exchangeToMono(response -> {
+                                    if (response.statusCode().equals(HttpStatus.OK)) {
+                                        return response.bodyToMono(JsonNode.class);
+                                    } else {
+                                        return Mono.empty();
+                                    }
+                                }).map(jsonNode -> jsonNode.get("name").asText())
+                                .block();
+                    } catch (Exception e) {
+                        System.out.println("Error in Group Name : " + e);
+                    }
+
+                    message = message.replace("[group name]", groupName);
+                    notificationDTO.setMessage(message);
+                    notificationDTO.setUserId(userId);
+                    notificationDTO.setRead(false);
+                    try {
+                        sendNotification(notificationDTO);
+                    } catch (Exception e) {
+                        System.err.println("Error sending notification to user: " + userId + e.getMessage());
+                    }
+                }
+            }
         }
     }
+
+
+
 }
