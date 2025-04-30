@@ -56,9 +56,12 @@ public class NotificationService {
         return modelMapper.map(notifications, new TypeToken<List<NotificationDTO>>() {}.getType());
     }
 
-    public NotificationDTO sendNotification(NotificationDTO notificationDTO) {
+    public NotificationDTO sendNotification(NotificationDTO notificationDTO, Integer groupId, String groupName) {
         try {
             Notification notification = modelMapper.map(notificationDTO, Notification.class);
+            notification.setGroupId(groupId);
+            notification.setGroupName(groupName);
+
             Notification savedNotification = notificationRepo.save(notification);
             return modelMapper.map(savedNotification, NotificationDTO.class);
         } catch (Exception e) {
@@ -81,7 +84,7 @@ public class NotificationService {
         }.getType());
     }
 
-    public void sendNotificationToGroup(String message, List<Integer> groupIds) {
+    public void sendNotificationToGroup(String message, List<Integer> groupIds)  {
         for (Integer groupId : groupIds) {
             System.out.println("Entering sendNotificationToGroup for groupId: " + groupId);
 
@@ -131,7 +134,7 @@ public class NotificationService {
                     notificationDTO.setUserId(userId);
                     notificationDTO.setRead(false);
                     try {
-                        sendNotification(notificationDTO);
+                        sendNotification(notificationDTO,groupId,groupName);
                     } catch (Exception e) {
                         System.err.println("Error sending notification to user: " + userId + e.getMessage());
                     }

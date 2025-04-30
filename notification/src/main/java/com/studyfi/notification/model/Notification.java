@@ -24,6 +24,12 @@ public class Notification {
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
 
+    @Column(name = "group_id")
+    private Integer groupId;
+
+    @Column(name = "group_name")
+    private String groupName;
+
 
     // Constructors
 
@@ -32,20 +38,23 @@ public class Notification {
         this.isRead = false;
     }
 
-    public Notification(String message, Integer userId) {
+    public Notification(String message, Integer userId,Integer groupId, String groupName) {
         this.message = message;
         this.userId = userId;
         this.timestamp = LocalDateTime.now();
         this.isRead = false;
+        this.groupId = groupId;
+        this.groupName = groupName;
     }
 
-    public Notification(Integer id, String message, Integer userId) {
+    public Notification(Integer id, String message, Integer userId, Integer groupId,String groupName) {
         this.id = id;
         this.message = message;
         this.userId = userId;
         this.timestamp = LocalDateTime.now();
-    }public Notification(Integer id, String message, Boolean isRead, Integer userId, LocalDateTime timestamp) {
+    }public Notification(Integer id, String message, Boolean isRead, Integer userId, LocalDateTime timestamp, Integer groupId, String groupName) {
         this.id = id;
+        this.groupId = groupId;
         this.message = message;
         this.userId = userId;
         this.timestamp = timestamp;
@@ -91,5 +100,21 @@ public class Notification {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Integer getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(Integer groupId) {
+        this.groupId = groupId;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 }
