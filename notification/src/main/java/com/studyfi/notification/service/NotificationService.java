@@ -12,7 +12,7 @@ import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Service;import java.time.LocalDateTime;
 import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import org.springframework.core.ParameterizedTypeReference;
@@ -37,10 +37,11 @@ public class NotificationService {
     public NotificationService(ModelMapper modelMapper){
         this.modelMapper = modelMapper;
         this.modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+
         this.modelMapper.createTypeMap(Notification.class, NotificationDTO.class)
-                .addMapping(Notification::isRead, NotificationDTO::setRead);
+                .addMapping(Notification::isRead, NotificationDTO::setRead).addMapping(Notification::getTimestamp, NotificationDTO::setTimestamp);
         this.modelMapper.createTypeMap(NotificationDTO.class, Notification.class)
-                .addMapping(NotificationDTO::isRead, Notification::setRead);
+                .addMapping(NotificationDTO::isRead, Notification::setRead) ;
     }
 
     public List<NotificationDTO> getAllNotifications(){
@@ -58,9 +59,14 @@ public class NotificationService {
 
     public NotificationDTO sendNotification(NotificationDTO notificationDTO, Integer groupId, String groupName) {
         try {
-            Notification notification = modelMapper.map(notificationDTO, Notification.class);
+            Notification notification = new Notification();
+            notification.setMessage(notificationDTO.getMessage());
+            notification.setUserId(notificationDTO.getUserId());
+            notification.setRead(notificationDTO.isRead());
+            notification.setTimestamp(LocalDateTime.now());
             notification.setGroupId(groupId);
             notification.setGroupName(groupName);
+
 
             Notification savedNotification = notificationRepo.save(notification);
             return modelMapper.map(savedNotification, NotificationDTO.class);
