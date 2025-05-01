@@ -1,6 +1,7 @@
 package com.studyfi.userandgroup.user.service;
 
 import com.studyfi.userandgroup.group.model.Group;
+import com.studyfi.userandgroup.user.dto.PasswordResetResponseDTO;
 import com.studyfi.userandgroup.user.dto.PasswordResetDTO;
 import com.studyfi.userandgroup.user.dto.UserDTO;
 import com.studyfi.userandgroup.user.model.User;
@@ -16,7 +17,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 
+import java.time.ZoneId;
 import java.util.Date;
+import java.time.LocalDateTime;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,62 +98,72 @@ public class UserService {
     }
 
     // The method to send reset link email with token and expiration time
-    public void sendPasswordResetLink(String email) {
-        // Generate a random token for password reset
-        String resetToken = UUID.randomUUID().toString();
-
-        // Set the expiration time for the token (e.g., 1 hour from now)
-        Date expiryDate = new Date(System.currentTimeMillis() + 3600 * 1000);  // 1 hour expiry time
-
-        // Save this reset token and expiration time in the database for the user
+    public String sendPasswordResetLink(String email){
         User user = userRepo.findByEmail(email);
         if (user == null) {
             throw new RuntimeException("User not found");
         }
-        user.setResetToken(resetToken);
-        user.setResetTokenExpiry(expiryDate);  // Save the expiration time
-        userRepo.save(user);  // Save the user with the reset token and expiry time
+        // Generate a 6-digit verification code
+        String verificationCode = generateVerificationCode();
+        // Set the expiration time for the code (e.g., 15 minutes from now)
+        LocalDateTime verificationCodeExpiryLocalDateTime = LocalDateTime.now().plusMinutes(15);
+        Date verificationCodeExpiry = Date.from(verificationCodeExpiryLocalDateTime.atZone(ZoneId.systemDefault()).toInstant());
 
-        // Create the complete URL for password reset with the real domain
-        String resetLink = resetPasswordUrl + "?token=" + resetToken;
+        // Save the verification code and expiry in the database
+        user.setVerificationCode(verificationCode);
+        user.setVerificationCodeExpiry(verificationCodeExpiry);
+        userRepo.save(user);
+        sendVerificationCode(email,verificationCode);
+        return verificationCode;
+    }
 
+    private void sendVerificationCode(String email, String verificationCode) {
         // Prepare the email message
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("Password Reset Request");
-        message.setText("Click the following link to reset your password: " + resetLink);
+        message.setText("Your verification code is: " + verificationCode + ". This code will expire in 15 minutes.");
 
         // Send the email
         try {
             mailSender.send(message);
-            System.out.println("Password reset email sent to: " + email);
+            System.out.println("Verification code sent to: " + email);
         } catch (Exception ex) {
             System.err.println("Error sending email: " + ex.getMessage());
         }
     }
 
+    private String generateVerificationCode() {
+        // Generate a random 6-digit number
+        int code = (int) (Math.random() * 900000) + 100000;
+        return String.valueOf(code);
+    }
+
     // The method to reset the user's password using the reset token
-    public void resetPassword(String token, PasswordResetDTO passwordResetDTO) {
+    public void resetPassword(PasswordResetDTO passwordResetDTO) {
         // Find the user by the reset token
-        User user = userRepo.findByResetToken(token);
-        if (user == null) {
-            throw new RuntimeException("Invalid reset token");
+        User user = userRepo.findByEmail(passwordResetDTO.getEmail());
+        if (user == null ) {
+            throw new RuntimeException("Invalid email address");
+        }
+        if (!passwordResetDTO.getVerificationCode().equals(user.getVerificationCode())) {
+            throw new RuntimeException("Invalid Verification Code");
         }
 
         // Check if the token has expired
-        if (user.getResetTokenExpiry().before(new Date())) {
-            throw new RuntimeException("Reset token has expired");
+        if (user.getVerificationCodeExpiry().before(new Date())) {
+            throw new RuntimeException("Verification code has expired");
         }
 
         // Validate the new password
-        validatePassword(passwordResetDTO.getNewPassword());
+        validatePassword(passwordResetDTO.getNewPassword()); // throws exception if invalid password
 
         // Encrypt the new password before saving
-        user.setPassword(passwordEncoder.encode(passwordResetDTO.getNewPassword()));  // BCrypt encoding
+        user.setPassword(passwordEncoder.encode(passwordResetDTO.getNewPassword()));
 
-        // Clear the reset token and expiry after the password reset
-        user.setResetToken(null);
-        user.setResetTokenExpiry(null);
+        // Clear the verification code and expiry after the password reset
+        user.setVerificationCode(null);
+        user.setVerificationCodeExpiry(null);
 
         // Save the updated user
         userRepo.save(user);

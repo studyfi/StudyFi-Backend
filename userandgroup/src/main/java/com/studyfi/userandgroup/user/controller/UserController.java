@@ -2,10 +2,10 @@ package com.studyfi.userandgroup.user.controller;
 
 import com.studyfi.userandgroup.service.CloudinaryService;
 import com.studyfi.userandgroup.user.dto.EmailRequestDTO;
+import com.studyfi.userandgroup.user.dto.PasswordResetResponseDTO;
 import com.studyfi.userandgroup.user.dto.PasswordResetDTO;
 import com.studyfi.userandgroup.user.dto.UserDTO;
 import com.studyfi.userandgroup.user.service.UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -75,17 +75,22 @@ public class UserController {
     }
 
     // Endpoint to trigger sending the password reset link
-    @PostMapping("/forgot-password")
-    public String sendPasswordResetEmail(@RequestBody EmailRequestDTO emailRequestDTO) {
-        userService.sendPasswordResetLink(emailRequestDTO.getEmail()); // Calls the service method
-        return "Password reset link sent to " + emailRequestDTO.getEmail();
+    @PostMapping("/forgot-password") // Update this method
+    public PasswordResetResponseDTO sendPasswordResetEmail(@RequestBody EmailRequestDTO emailRequestDTO) {
+        String verificationCode = userService.sendPasswordResetLink(emailRequestDTO.getEmail()); // Calls the service method
+
+        PasswordResetResponseDTO response = new PasswordResetResponseDTO();
+        response.setMessage("Password reset link sent to " + emailRequestDTO.getEmail());
+        response.setVerificationCode(verificationCode);
+
+        return response;
     }
 
     // Endpoint to reset password
     @PostMapping("/reset-password")
-    public String resetPassword(@RequestParam String token, @RequestBody PasswordResetDTO passwordResetDTO) {
-        userService.resetPassword(token, passwordResetDTO);
-        return "Password has been successfully reset.";
+    public String resetPassword(@RequestBody PasswordResetDTO passwordResetDTO) {
+        userService.resetPassword(passwordResetDTO);
+        return "Password has been successfully reset for: "+ passwordResetDTO.getEmail();
     }
 
     //Update user profile
