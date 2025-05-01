@@ -95,7 +95,7 @@ public class UserController {
             @PathVariable Integer userId,
             @RequestParam("name") String name,
             @RequestParam("email") String email,
-            @RequestParam("password") String password,
+            @RequestParam(value="password", required = false) String password,
             @RequestParam("phoneContact") String phoneContact,
             @RequestParam("birthDate") String birthDate,
             @RequestParam("country") String country,
