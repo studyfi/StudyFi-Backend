@@ -205,11 +205,15 @@ public class UserService {
         User user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         Group group = groupRepo.findById(groupId).orElseThrow(() -> new RuntimeException("Group not found"));
 
-        user.getGroups().add(group);
-        group.getUsers().add(user);
+        if (user.getGroups().contains(group)) {
+            throw new RuntimeException("User is already in the group.");
+        } else {
+            user.getGroups().add(group);
+            group.getUsers().add(user);
 
-        userRepo.save(user);
-        groupRepo.save(group);
+            userRepo.save(user);
+            groupRepo.save(group);
+        }
     }
 
     public List<Integer> getUsersByGroupId(Integer groupId) {
