@@ -170,11 +170,11 @@ public class UserService {
         // Update the user fields with new data
         modelMapper.map(userDTO, user);
         // Validate the new password before updating it
-        validatePassword(userDTO.getPassword());
-        // Encrypt the password before saving
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-
-
+        if(userDTO.getPassword() != null){
+            validatePassword(userDTO.getPassword());
+            // Encrypt the password before saving
+            user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        }
         // Save the updated user
         userRepo.save(user);
         return modelMapper.map(user, UserDTO.class);
