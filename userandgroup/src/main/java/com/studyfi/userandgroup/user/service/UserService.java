@@ -65,12 +65,19 @@ public class UserService {
         return modelMapper.map(user, UserDTO.class);
     }
     public UserDTO registerUser(UserDTO userDTO) {
+        // Check if a user with the same email already exists
+        User existingUser = userRepo.findByEmail(userDTO.getEmail());
+        if (existingUser != null) {
+            throw new RuntimeException("User with this email already exists.");
+        }
+
         // Validate password for registration
         validatePassword(userDTO.getPassword());
 
         User user = modelMapper.map(userDTO, User.class);
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));  // Encrypt password during registration
         userRepo.save(user);
+
         return modelMapper.map(user, UserDTO.class);
     }
 
@@ -153,6 +160,15 @@ public class UserService {
     public UserDTO updateUserProfile(Integer userId, UserDTO userDTO) {
         User user = userRepo.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
 
+        // Check if the updated email is already in use by another user
+        if (userDTO.getEmail() != null && !userDTO.getEmail().equals(user.getEmail())) {
+            User existingUserWithEmail = userRepo.findByEmail(userDTO.getEmail());
+            if (existingUserWithEmail != null) {
+                throw new RuntimeException("Email is already in use by another user.");
+            }
+        }
+
+
         // Check if a new profile image URL is provided
         if (userDTO.getProfileImageUrl() != null) {
             user.setProfileImageUrl(userDTO.getProfileImageUrl());
@@ -168,6 +184,10 @@ public class UserService {
         }
 
         // Update the user fields with new data
+        if(userDTO.getEmail() != null){
+            user.setEmail(userDTO.getEmail());
+        }
+
         modelMapper.map(userDTO, user);
         // Validate the new password before updating it
         if(userDTO.getPassword() != null){
