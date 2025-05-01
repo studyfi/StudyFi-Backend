@@ -97,5 +97,9 @@ public class GroupController {
         return groupService.getGroupsByUser(userId);
     }
 
-
+    //Get groups that user has not joined
+    @GetMapping("/notjoined/user/{userId}")
+    public List<GroupDTO> getGroupsNotJoinedByUser(@PathVariable Integer userId){
+        return groupService.getGroupsNotJoinedByUser(userId);
+    }
 }

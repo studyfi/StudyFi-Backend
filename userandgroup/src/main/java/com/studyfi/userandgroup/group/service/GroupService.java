@@ -83,4 +83,12 @@ public class GroupService {
         return groups.stream().map(group -> modelMapper.map(group, GroupDTO.class)).collect(Collectors.toList());
     }
 
+    // Get groups that a user has not joined
+    public List<GroupDTO> getGroupsNotJoinedByUser(Integer userId) {
+        User user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        List<Group> joinedGroups = user.getGroups();
+        List<Group> allGroups = groupRepo.findAll();
+        List<Group> notJoinedGroups = allGroups.stream().filter(group -> !joinedGroups.contains(group)).toList();
+        return notJoinedGroups.stream().map(group -> modelMapper.map(group, GroupDTO.class)).collect(Collectors.toList());
+    }
 }
