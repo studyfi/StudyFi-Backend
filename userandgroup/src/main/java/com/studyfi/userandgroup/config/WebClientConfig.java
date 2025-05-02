@@ -1,4 +1,4 @@
-package com.studyfi.userandgroup.service;
+package com.studyfi.userandgroup.config;
 
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;

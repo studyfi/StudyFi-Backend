@@ -125,6 +125,11 @@ public class GroupController {
         return groupService.getUserDTOsByGroupId(groupId);
     }
 
+    @GetMapping("/{groupId}/userids")
+    public List<Integer> getUserIdsByGroup(@PathVariable Integer groupId){
+        return userService.getUsersByGroupId(groupId);
+    }
+
     @GetMapping("/{groupId}/count")
     public Integer getGroupUserCount(@PathVariable Integer groupId){
         List<Integer> userIds = userService.getUsersByGroupId(groupId);
@@ -146,4 +151,12 @@ public class GroupController {
     public List<GroupDTO> getGroupsNotJoinedByUser(@PathVariable Integer userId){
         return groupService.getGroupsNotJoinedByUser(userId);
     }
+
+    // Remove a user from a group
+    @DeleteMapping("/remove/{groupId}/user/{userId}")
+    public ResponseEntity<?> removeUserFromGroup(@PathVariable Integer groupId, @PathVariable Integer userId) {
+        groupService.removeUserFromGroup(groupId, userId);
+        return ResponseEntity.ok().build();
+    }
+
 }

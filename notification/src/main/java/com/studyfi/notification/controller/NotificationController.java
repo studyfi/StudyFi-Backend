@@ -3,6 +3,7 @@ package com.studyfi.notification.controller;
 import com.studyfi.notification.dto.NotificationDTO;
 import com.studyfi.notification.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -46,5 +47,13 @@ public class NotificationController {
         java.util.Map<String, String> result = new HashMap<>();
         result.put("message", "All notifications marked as read");
         return result;
+    }
+
+    @DeleteMapping("/remove/{groupId}/user/{userId}")
+    public ResponseEntity<?> removeNotificationsByGroupIdAndUserId(
+            @PathVariable Integer groupId,
+            @PathVariable Integer userId) {
+        notificationService.removeNotificationsByGroupIdAndUserId(groupId, userId);
+        return ResponseEntity.ok().build();
     }
 }

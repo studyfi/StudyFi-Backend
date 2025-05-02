@@ -3,6 +3,7 @@ package com.studyfi.notification.repo;
 import com.studyfi.notification.model.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -12,4 +13,7 @@ public interface NotificationRepo extends JpaRepository<Notification, Integer> {
     List<Notification> findByUserId(Integer userId);
     List<Notification> findTop10ByUserIdOrderByTimestampDesc(Integer userId);
     List<Notification> findByUserIdAndIsReadFalse(Integer userId);
+
+    @Transactional
+    void deleteByGroupIdAndUserId(Integer groupId, Integer userId);
 }
