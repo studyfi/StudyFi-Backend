@@ -1,15 +1,21 @@
 package com.studyfi.userandgroup.group.controller;
 
+import com.studyfi.userandgroup.group.dto.GroupCountsDTO;
+import com.studyfi.userandgroup.group.dto.GroupCountsDTO;
 import com.studyfi.userandgroup.service.CloudinaryService;
 import com.studyfi.userandgroup.group.dto.GroupDTO;
 import com.studyfi.userandgroup.group.service.GroupService;
 import com.studyfi.userandgroup.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
 
 import java.util.List;
 import java.io.IOException;
@@ -24,6 +30,9 @@ public class GroupController {
     private GroupService groupService;
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private WebClient.Builder webClientBuilder;
 
     @Autowired
     private CloudinaryService cloudinaryService;
@@ -86,9 +95,43 @@ public class GroupController {
         }
     }
 
+    @GetMapping("/{groupId}/counts")
+    public ResponseEntity<GroupCountsDTO> getGroupCounts(@PathVariable Integer groupId) {
+        // Fetch user count using existing logic
+        Integer userCount = getGroupUserCount(groupId);
+
+        // Fetch content count from content microservice
+        Integer contentCount = webClientBuilder.build().get()
+                .uri("http://contentandnews/api/v1/content/group/" + groupId + "/count")
+                .retrieve()
+                .bodyToMono(Integer.class)
+                .onErrorReturn(0)
+                .block();
+
+        // Fetch news count from news microservice
+        Integer newsCount = webClientBuilder.build().get().uri("http://contentandnews/api/v1/news/group/" + groupId + "/count")
+                .retrieve()
+                .bodyToMono(Integer.class)
+                .onErrorReturn(0)
+                .block();
+
+        // Create and return the combined counts
+        return ResponseEntity.ok(new GroupCountsDTO(contentCount, newsCount, userCount));
+    }
+
     @GetMapping("/{groupId}/users")
     public List<Integer> getUsersByGroup(@PathVariable Integer groupId){
         return userService.getUsersByGroupId(groupId);
+    }
+
+    @GetMapping("/{groupId}/count")
+    public Integer getGroupUserCount(@PathVariable Integer groupId){
+        List<Integer> userIds = userService.getUsersByGroupId(groupId);
+        if (userIds == null) {
+            return 0;
+        } else {
+            return userIds.size();
+        }
     }
 
     //Get groups for a user.

@@ -43,6 +43,12 @@ public class ContentController {
                 .collect(Collectors.toList());
     }
 
+    // New endpoint to get the number of contents for a specific group
+    @GetMapping("/group/{groupId}/count")
+    public Integer getCountForGroup(@PathVariable Integer groupId) {
+        return contentService.getContentForGroup(groupId).size();
+    }
+
     // Method to convert Content to ContentDTO
     private ContentDTO convertToDTO(Content content) {
         ContentDTO contentDTO = new ContentDTO();
