@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;import java.time.LocalDateTime;
 import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.transaction.annotation.Propagation;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -97,7 +98,7 @@ public class NotificationService {
             // Get users by group
             List<Integer> userIds;
             try {
-                String url = String.format("http://apigateway/api/v1/groups/%s/users", groupId);
+                String url = String.format("http://apigateway/api/v1/groups/%s/userids", groupId);
                 Mono<List<Integer>> response = webClientBuilder.build().get()
                         .uri(url)
                         .exchangeToMono(clientResponse -> {
@@ -149,6 +150,8 @@ public class NotificationService {
         }
     }
 
-
+    public void removeNotificationsByGroupIdAndUserId(Integer groupId, Integer userId) {
+        notificationRepo.deleteByGroupIdAndUserId(groupId, userId);
+    }
 
 }
