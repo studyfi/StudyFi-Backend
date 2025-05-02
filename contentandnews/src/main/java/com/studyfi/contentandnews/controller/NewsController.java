@@ -44,6 +44,12 @@ public class NewsController {
                 .collect(Collectors.toList());
     }
 
+    @GetMapping("/group/{groupId}/count")
+    public Integer getCountForGroup(@PathVariable Integer groupId) {
+        List<News> newsList = newsService.getNewsForGroup(groupId);
+        return newsList.size();
+    }
+
     // Method to convert News to NewsDTO
     private NewsDTO convertToDTO(News news) {
         NewsDTO newsDTO = new NewsDTO();

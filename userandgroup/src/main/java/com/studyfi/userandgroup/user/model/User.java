@@ -3,8 +3,6 @@ package com.studyfi.userandgroup.user.model;
 import com.studyfi.userandgroup.group.model.Group;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.Date;
 import java.util.List;
@@ -42,12 +40,12 @@ public class User {
     @Column(name = "cover_image_url")
     private String coverImageUrl;
 
-    @Column(name = "reset_token")
-    private String resetToken;
+    @Column(name = "verification_code")
+    private String verificationCode;
 
-    // for storing the expiration time of the reset token
-    @Column(name = "reset_token_expiry")
-    private Date resetTokenExpiry;  // The expiration time of the reset token
+    // for storing the expiration time of the verification code
+    @Column(name = "verification_code_expiry")
+    private Date verificationCodeExpiry;  // The expiration time of the verification token
 
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
