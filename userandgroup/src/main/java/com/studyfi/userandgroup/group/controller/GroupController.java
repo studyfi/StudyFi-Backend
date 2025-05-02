@@ -6,6 +6,7 @@ import com.studyfi.userandgroup.service.CloudinaryService;
 import com.studyfi.userandgroup.group.dto.GroupDTO;
 import com.studyfi.userandgroup.group.service.GroupService;
 import com.studyfi.userandgroup.user.service.UserService;
+import com.studyfi.userandgroup.user.dto.UserDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -120,8 +121,8 @@ public class GroupController {
     }
 
     @GetMapping("/{groupId}/users")
-    public List<Integer> getUsersByGroup(@PathVariable Integer groupId){
-        return userService.getUsersByGroupId(groupId);
+    public List<UserDTO> getUsersByGroup(@PathVariable Integer groupId){
+        return groupService.getUserDTOsByGroupId(groupId);
     }
 
     @GetMapping("/{groupId}/count")

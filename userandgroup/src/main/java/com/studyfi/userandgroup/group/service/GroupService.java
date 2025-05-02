@@ -1,6 +1,7 @@
 package com.studyfi.userandgroup.group.service;
 
 import com.studyfi.userandgroup.group.dto.GroupDTO;
+import com.studyfi.userandgroup.user.dto.UserDTO;
 import com.studyfi.userandgroup.user.model.User;
 import com.studyfi.userandgroup.group.model.Group;
 import com.studyfi.userandgroup.group.repo.GroupRepo;
@@ -8,6 +9,8 @@ import com.studyfi.userandgroup.user.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
+
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import org.modelmapper.convention.MatchingStrategies;
@@ -90,5 +93,14 @@ public class GroupService {
         List<Group> allGroups = groupRepo.findAll();
         List<Group> notJoinedGroups = allGroups.stream().filter(group -> !joinedGroups.contains(group)).toList();
         return notJoinedGroups.stream().map(group -> modelMapper.map(group, GroupDTO.class)).collect(Collectors.toList());
+    }
+
+    public List<UserDTO> getUserDTOsByGroupId(Integer groupId) {
+        Group group = groupRepo.findById(groupId).orElseThrow(() -> new RuntimeException("Group not found"));
+        List<UserDTO> userDTOs = new ArrayList<>();
+        for (User user : group.getUsers()) {
+            userDTOs.add(modelMapper.map(user,UserDTO.class));
+        }
+        return userDTOs;
     }
 }
