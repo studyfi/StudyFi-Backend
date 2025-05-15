@@ -49,6 +49,12 @@ public class ChatController {
         return new ResponseEntity<>(createdComment, HttpStatus.CREATED);
     }
 
+    @GetMapping("/posts/{postId}/comments")
+    public ResponseEntity<List<CommentDTO>> getCommentsByPostId(@PathVariable Integer postId) {
+        List<CommentDTO> comments = chatService.getCommentsByPostId(postId);
+        return new ResponseEntity<>(comments, HttpStatus.OK);
+    }
+
     @GetMapping("/comments/{commentId}")
     public ResponseEntity<CommentDTO> getComment(@PathVariable Integer commentId) {
         CommentDTO comment = chatService.getComment(commentId);
@@ -66,5 +72,11 @@ public class ChatController {
     public ResponseEntity<List<LikeDTO>> getLikesFromPost(@PathVariable Integer postId) {
         List<LikeDTO> likes = chatService.getLikesFromPost(postId);
         return new ResponseEntity<>(likes, HttpStatus.OK);
+    }
+
+    @GetMapping("/group/{groupId}/count")
+    public ResponseEntity<Integer> getPostCountByGroupId(@PathVariable Integer groupId) {
+        int count = chatService.getPostCountByGroupId(groupId);
+        return new ResponseEntity<>(count, HttpStatus.OK);
     }
 }

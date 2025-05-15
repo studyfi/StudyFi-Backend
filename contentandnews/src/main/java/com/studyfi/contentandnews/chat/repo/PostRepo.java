@@ -12,4 +12,5 @@ import java.util.List;
 public interface PostRepo extends JpaRepository<Post, Integer> {
     //List<Post> findByGroupId(Integer groupId);
     Page<Post> findByGroupId(Integer groupId, Pageable pageable);
+    int countByGroupId(Integer groupId);
 }

@@ -116,8 +116,15 @@ public class GroupController {
                 .onErrorReturn(0)
                 .block();
 
+        // Fetch post count from news microservice
+        Integer chatCount = webClientBuilder.build().get().uri("http://contentandnews/api/v1/chats/group/" + groupId + "/count")
+                .retrieve()
+                .bodyToMono(Integer.class)
+                .onErrorReturn(0)
+                .block();
+
         // Create and return the combined counts
-        return ResponseEntity.ok(new GroupCountsDTO(contentCount, newsCount, userCount));
+        return ResponseEntity.ok(new GroupCountsDTO(contentCount, newsCount, userCount, chatCount));
     }
 
     @GetMapping("/{groupId}/users")
