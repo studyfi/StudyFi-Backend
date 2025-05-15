@@ -75,6 +75,12 @@ public class ChatController {
         return new ResponseEntity<>(likes, HttpStatus.OK);
     }
 
+    @DeleteMapping("/posts/{postId}/likes")
+    public ResponseEntity<Void> unlikePost(@PathVariable Integer postId, @RequestParam Integer userId) {
+        chatService.unlikePost(postId, userId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
     @GetMapping("/group/{groupId}/count")
     public ResponseEntity<Integer> getPostCountByGroupId(@PathVariable Integer groupId) {
         int count = chatService.getPostCountByGroupId(groupId);

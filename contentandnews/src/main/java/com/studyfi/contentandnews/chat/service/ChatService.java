@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Collectors;
 
 @Service
 public class ChatService {
@@ -200,6 +199,18 @@ public class ChatService {
         likeDTO.setLikedByUser(true); // The user who just liked it will have likedByUser set to true
         return likeDTO;
     }
+
+    public void unlikePost(Integer postId, Integer userId) {
+        if (postId == null || userId == null) {
+            throw new IllegalArgumentException("Post ID and User ID cannot be null");
+        }
+
+        likeRepo.findByUserIdAndPostId(userId, postId)
+                .ifPresentOrElse(
+                        likeRepo::delete,
+                        () -> System.out.println("User " + userId + " has not liked post " + postId));
+    }
+
 
     public PostLikesSummaryDTO getLikesFromPost(Integer postId, Integer currentUserId) {
         if (postId == null) {
