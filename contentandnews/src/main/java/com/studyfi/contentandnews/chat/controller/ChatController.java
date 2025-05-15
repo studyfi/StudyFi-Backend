@@ -3,6 +3,7 @@ package com.studyfi.contentandnews.chat.controller;
 import com.studyfi.contentandnews.chat.dto.CommentDTO;
 import com.studyfi.contentandnews.chat.dto.LikeDTO;
 import com.studyfi.contentandnews.chat.dto.PostDTO;
+import com.studyfi.contentandnews.chat.dto.PostLikesSummaryDTO;
 import com.studyfi.contentandnews.chat.service.ChatService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -69,8 +70,8 @@ public class ChatController {
     }
 
     @GetMapping("/posts/{postId}/likes")
-    public ResponseEntity<List<LikeDTO>> getLikesFromPost(@PathVariable Integer postId) {
-        List<LikeDTO> likes = chatService.getLikesFromPost(postId);
+    public ResponseEntity<PostLikesSummaryDTO> getLikesFromPost(@PathVariable Integer postId, @RequestParam Integer currentUserId) {
+        PostLikesSummaryDTO likes = chatService.getLikesFromPost(postId, currentUserId);
         return new ResponseEntity<>(likes, HttpStatus.OK);
     }
 

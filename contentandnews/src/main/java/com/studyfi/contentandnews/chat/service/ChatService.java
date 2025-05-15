@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.studyfi.contentandnews.chat.dto.CommentDTO;
 import com.studyfi.contentandnews.chat.dto.LikeDTO;
 import com.studyfi.contentandnews.chat.dto.PostDTO;
+import com.studyfi.contentandnews.chat.dto.PostLikesSummaryDTO;
 import com.studyfi.contentandnews.chat.dto.UserDTO;
 import com.studyfi.contentandnews.chat.model.Comment;
 import com.studyfi.contentandnews.chat.model.Like;
@@ -29,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 
 @Service
@@ -183,29 +185,49 @@ public class ChatService {
             throw new IllegalArgumentException("Post ID and User ID cannot be null");
         }
 
+        // Check if the user has already liked this post
+        likeRepo.findByUserIdAndPostId(likeDTO.getUserId(), likeDTO.getPostId())
+                .ifPresent(existingLike -> {
+                    throw new IllegalArgumentException("User already liked this post.");
+                });
+
         Like like = new Like();
         like.setPostId(likeDTO.getPostId());
         like.setUserId(likeDTO.getUserId());
 
         Like savedLike = likeRepo.save(like);
         likeDTO.setLikeId(savedLike.getLikeId());
+        likeDTO.setLikedByUser(true); // The user who just liked it will have likedByUser set to true
         return likeDTO;
     }
 
-    public List<LikeDTO> getLikesFromPost(Integer postId) {
+    public PostLikesSummaryDTO getLikesFromPost(Integer postId, Integer currentUserId) {
         if (postId == null) {
             throw new IllegalArgumentException("Post ID cannot be null");
         }
 
-        return likeRepo.findAll().stream()
-                .filter(like -> like.getPostId().equals(postId))
-                .map(like -> {
-                    LikeDTO likeDTO = new LikeDTO();
-                    likeDTO.setLikeId(like.getLikeId());
-                    likeDTO.setPostId(like.getPostId());
-                    likeDTO.setUserId(like.getUserId());
-                    return likeDTO;
-                }).collect(Collectors.toList());
+        List<Like> likes = likeRepo.findByPostId(postId);
+
+        List<Integer> likedUserIds = likes.stream()
+                .map(Like::getUserId)
+                .collect(Collectors.toList());
+
+        List<UserDTO> likedUsers = likedUserIds.stream()
+                .map(this::getUserDTOFromUserAndGroup)
+                .collect(Collectors.toList());
+
+        // Log values for debugging
+        System.out.println("Post ID: " + postId);
+        System.out.println("Current User ID: " + currentUserId);
+        System.out.println("Liked User IDs: " + likedUserIds);
+        boolean likedByCurrentUser = likedUserIds.contains(currentUserId);
+
+        PostLikesSummaryDTO summaryDTO = new PostLikesSummaryDTO();
+        summaryDTO.setLikeCount(likes.size());
+        summaryDTO.setLikedUsers(likedUsers);
+        summaryDTO.setLikedByCurrentUser(likedByCurrentUser);
+
+        return summaryDTO;
     }
 
     public List<PostDTO> getPostsByGroupId(Integer groupId, int page, int size) {
