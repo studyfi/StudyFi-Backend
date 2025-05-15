@@ -363,4 +363,27 @@ public class ChatService {
             System.out.println("Error sending notification: " + e.getMessage());
         }
     }
+
+    public List<CommentDTO> getCommentsByPostId(Integer postId) {
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+
+        List<Comment> comments = commentRepo.findByPostId(postId);
+
+        return comments.stream().map(comment -> {
+            UserDTO userDTO = getUserDTOFromUserAndGroup(comment.getUserId());
+            CommentDTO commentDTO = new CommentDTO();
+            commentDTO.setCommentId(comment.getCommentId());
+            commentDTO.setPostId(comment.getPostId());
+            commentDTO.setContent(comment.getContent());
+            commentDTO.setTimestamp(comment.getTimestamp());
+            commentDTO.setUser(userDTO);
+            return commentDTO;
+        }).collect(Collectors.toList());
+    }
+
+    public int getPostCountByGroupId(Integer groupId) {
+        return postRepo.countByGroupId(groupId);
+    }
 }
