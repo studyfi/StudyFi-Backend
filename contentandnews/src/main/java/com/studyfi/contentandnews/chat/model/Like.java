@@ -5,7 +5,9 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "post_like")
+@Table(name = "post_like", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"userId", "postId"}, name = "uq_user_post_like")
+})
 public class Like {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

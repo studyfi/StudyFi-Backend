@@ -7,4 +7,5 @@ public class LikeDTO {
     private Integer likeId;
     private Integer userId;
     private Integer postId;
+    private boolean likedByUser;
 }
