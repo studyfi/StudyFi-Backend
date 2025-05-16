@@ -4,6 +4,7 @@ import com.studyfi.userandgroup.group.model.Group;
 import com.studyfi.userandgroup.user.dto.PasswordResetResponseDTO;
 import com.studyfi.userandgroup.user.dto.PasswordResetDTO;
 import com.studyfi.userandgroup.user.dto.UserDTO;
+import com.studyfi.userandgroup.user.exception.EmailNotVerifiedException;
 import com.studyfi.userandgroup.user.model.User;
 import com.studyfi.userandgroup.user.repo.UserRepo;
 import com.studyfi.userandgroup.group.repo.GroupRepo;
@@ -20,6 +21,8 @@ import java.util.Optional;
 import java.time.ZoneId;
 import java.util.Date;
 import java.time.LocalDateTime;
+import com.studyfi.userandgroup.user.exception.InvalidVerificationCodeException;
+import com.studyfi.userandgroup.user.exception.EmailVerificationCodeInvalidException;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +67,11 @@ public class UserService {
             throw new RuntimeException("Invalid email or password");
         }
 
+        // Add the email verification
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException("Email address is not verified. Please check your email for the verification code."); // Throw your custom exception
+        }
+
         // Return the UserDTO
         return modelMapper.map(user, UserDTO.class);
     }
@@ -80,6 +88,9 @@ public class UserService {
         User user = modelMapper.map(userDTO, User.class);
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));  // Encrypt password during registration
         userRepo.save(user);
+
+        // Trigger email verification after successful registration
+        sendEmailVerificationCode(user.getEmail());
 
         return modelMapper.map(user, UserDTO.class);
     }
@@ -115,6 +126,62 @@ public class UserService {
         userRepo.save(user);
         sendVerificationCode(email,verificationCode);
         return verificationCode;
+    }
+
+    private String generateEmailVerificationCode() {
+        // Generate a unique code for email verification (can be different logic from password reset)
+        // For simplicity, let's use a UUID for now
+        return UUID.randomUUID().toString().substring(0, 6); // Example: using first 6 characters of UUID
+    }
+
+    public void sendEmailVerificationCode(String email) {
+        User user = userRepo.findByEmail(email);
+        if (user == null) {
+            throw new RuntimeException("User not found with email: " + email);
+        }
+
+        // Generate a new email verification code
+        String verificationCode = generateEmailVerificationCode();
+
+        // Set the expiration time for the code (e.g., 30 minutes from now)
+        LocalDateTime verificationCodeExpiry = LocalDateTime.now().plusMinutes(30);
+
+        // Save the email verification code and expiry in the database
+        user.setEmailVerificationCode(verificationCode);
+        user.setEmailVerificationCodeExpiry(verificationCodeExpiry);
+        userRepo.save(user);
+
+        // Send the email with the verification code
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Email Verification Code");
+        message.setText("Your email verification code is: " + verificationCode + ". This code will expire in 30 minutes.");
+
+        mailSender.send(message);
+    }
+
+    public boolean validateEmailVerificationCode(String email, String code) {
+        User user = userRepo.findByEmail(email);
+        if (user == null) {
+            throw new EntityNotFoundException("User not found with email: " + email);
+        }
+
+        // Check if the provided code matches the stored email verification code
+        if (user.getEmailVerificationCode() == null || !code.equals(user.getEmailVerificationCode())) {
+            throw new InvalidVerificationCodeException("Invalid email verification code");
+        }
+
+        // Check if the verification code has expired
+        if (user.getEmailVerificationCodeExpiry() == null || LocalDateTime.now().isAfter(user.getEmailVerificationCodeExpiry())) {
+            throw new EmailVerificationCodeInvalidException("Email verification code has expired");
+        }
+
+        // If the code is valid and not expired, set emailVerified to true and clear the code and expiry
+        user.setEmailVerified(true);
+        user.setEmailVerificationCode(null);
+        user.setEmailVerificationCodeExpiry(null);
+        userRepo.save(user);
+        return true;
     }
 
     private void sendVerificationCode(String email, String verificationCode) {

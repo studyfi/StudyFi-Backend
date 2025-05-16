@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -47,6 +48,13 @@ public class User {
     @Column(name = "verification_code_expiry")
     private Date verificationCodeExpiry;  // The expiration time of the verification token
 
+    @Column(name = "email_verification_code")
+    private String emailVerificationCode;
+    @Column(name = "email_verification_code_expiry")
+    private LocalDateTime emailVerificationCodeExpiry;
+    private boolean emailVerified = false;
+
+
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
             name = "user_group",
@@ -67,5 +75,29 @@ public class User {
     }
     public void setCoverImageUrl(String coverImageUrl) {
         this.coverImageUrl = coverImageUrl;
+    }
+
+    public String getEmailVerificationCode() {
+        return emailVerificationCode;
+    }
+
+    public void setEmailVerificationCode(String emailVerificationCode) {
+        this.emailVerificationCode = emailVerificationCode;
+    }
+
+    public LocalDateTime getEmailVerificationCodeExpiry() {
+        return emailVerificationCodeExpiry;
+    }
+
+    public void setEmailVerificationCodeExpiry(LocalDateTime emailVerificationCodeExpiry) {
+        this.emailVerificationCodeExpiry = emailVerificationCodeExpiry;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 }
