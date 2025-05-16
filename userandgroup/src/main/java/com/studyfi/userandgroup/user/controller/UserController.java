@@ -5,13 +5,18 @@ import com.studyfi.userandgroup.user.dto.EmailRequestDTO;
 import com.studyfi.userandgroup.user.dto.PasswordResetResponseDTO;
 import com.studyfi.userandgroup.user.dto.PasswordResetDTO;
 import com.studyfi.userandgroup.user.dto.UserDTO;
+import com.studyfi.userandgroup.user.exception.EmailNotVerifiedException;
 import com.studyfi.userandgroup.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -57,10 +62,27 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public UserDTO login(@RequestParam("email") String email, @RequestParam("password") String password) throws Exception {
-        return userService.login(email, password);
+    public ResponseEntity<?> login(@RequestParam("email") String email, @RequestParam("password") String password) { // Change return type to ResponseEntity<?>
+        try {
+            UserDTO userDTO = userService.login(email, password);
+            return ResponseEntity.ok(userDTO); // Return 200 OK with UserDTO if login is successful
+        } catch (EmailNotVerifiedException e) {
+            // Handle email not verified exception
+            Map<String, String> response = new HashMap<>();
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // Return 401 Unauthorized
+        } catch (RuntimeException e) {
+            // Handle other login errors (e.g., invalid credentials)
+            Map<String, String> response = new HashMap<>();
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // Return 401 Unauthorized for invalid credentials
+        } catch (Exception e) {
+            // Handle any other unexpected errors
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "An error occurred during login.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response); // Return 500 Internal Server Error
+        }
     }
-
 
     // Get all users
     @GetMapping("/getusers")
