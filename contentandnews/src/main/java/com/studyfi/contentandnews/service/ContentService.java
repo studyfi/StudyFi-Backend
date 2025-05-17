@@ -10,7 +10,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ContentService {
@@ -44,9 +46,7 @@ public class ContentService {
 
     // Method to upload new content with file
     public Content uploadContent(String title, String contentText, String author, List<Integer> groupIds, MultipartFile file) throws IOException {
-        // Validate file size before upload
         validateGroups(groupIds);
-
         validateFileSize(file);
 
         // Proceed with file upload and content creation
@@ -57,36 +57,45 @@ public class ContentService {
         content.setAuthor(author);
         content.setGroupIds(groupIds);
         content.setCreatedAt(new Date());
-        content.setFileURL(fileUrl);  // Store the file URL in the content object
+        content.setFileURL(fileUrl);
 
         Content savedContent = contentRepo.save(content);
 
-        // Send notification
-        System.out.println("sendNotificationToGroup is called with message: New content: " + title + " and groupIds: " + groupIds);
-        try {
-            webClientBuilder.build()
-                    .post()
-                    .uri("http://apigateway/api/v1/notifications/addnotification")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(java.util.Map.of("message", "New content: " + title, "groupIds", groupIds))
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();
-        } catch (Exception e) {
-            // Log the error, but don't throw it to avoid breaking content creation
+        // Send notification for each group
+        for (Integer groupId : groupIds) {
+            try {
+                System.out.println("Sending notification to group " + groupId + " with message: New content: " + title);
+                Map<String, Object> notificationPayload = new HashMap<>();
+                notificationPayload.put("message", "New content: " + title + ", by " + author);
+                notificationPayload.put("groupId", groupId);
+                // Note: excludeUserId is not included since author is a string, not a user ID
+                // If you can map author to a user ID, add it here as notificationPayload.put("excludeUserId", authorUserId);
+
+                webClientBuilder.build()
+                        .post()
+                        .uri("http://apigateway/api/v1/notifications/addnotification")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(notificationPayload)
+                        .retrieve()
+                        .onStatus(status -> status.isError(),
+                                response -> response.bodyToMono(String.class)
+                                        .map(body -> new RuntimeException("Failed to send notification: " + body)))
+                        .bodyToMono(Void.class)
+                        .block();
+            } catch (Exception e) {
+                System.err.println("Error sending notification for group " + groupId + ": " + e.getMessage());
+            }
         }
+
         return savedContent;
     }
 
     public void validateFileSize(MultipartFile file) throws IllegalArgumentException {
-        // Check if the file size exceeds 10 MB (10 * 1024 * 1024 bytes)
-        long MAX_FILE_SIZE = 10 * 1024 * 1024;
-
+        long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new IllegalArgumentException("File size exceeds the limit of 10 MB.");
         }
     }
-
 
     // Get all content for a particular group
     public List<Content> getContentForGroup(Integer groupId) {
