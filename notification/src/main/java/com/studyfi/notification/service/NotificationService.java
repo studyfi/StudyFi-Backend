@@ -91,61 +91,120 @@ public class NotificationService {
         }.getType());
     }
 
-    public void sendNotificationToGroup(String message, List<Integer> groupIds)  {
-        for (Integer groupId : groupIds) {
-            System.out.println("Entering sendNotificationToGroup for groupId: " + groupId);
+    public void sendNotificationToGroup(String message, Integer groupId, Integer excludeUserId) {
+        if (groupId == null) {
+            System.out.println("Group ID is null, cannot send notification");
+            return;
+        }
+        System.out.println("Entering sendNotificationToGroup for groupId: " + groupId);
 
-            // Get users by group
-            List<Integer> userIds;
+        // Get users by group
+        List<Integer> userIds;
+        try {
+            String url = String.format("http://apigateway/api/v1/groups/%s/userids", groupId);
+            Mono<List<Integer>> response = webClientBuilder.build().get()
+                    .uri(url)
+                    .exchangeToMono(clientResponse -> {
+                        if (clientResponse.statusCode().isError()) {
+                            System.out.println("ERROR: Users by group for groupId: " + groupId);
+                            return Mono.just(List.of());
+                        } else {
+                            return clientResponse.bodyToMono(new ParameterizedTypeReference<List<Integer>>() {});
+                        }
+                    });
+            userIds = response.block();
+            System.out.println("Users in group " + groupId + ": " + userIds);
+        } catch (Exception e) {
+            System.out.println("Error in getUsersByGroup method: " + e.getMessage());
+            userIds = List.of();
+        }
+
+        if (userIds != null && !userIds.isEmpty()) {
+            // Get group name
+            String groupName = "";
             try {
-                String url = String.format("http://apigateway/api/v1/groups/%s/userids", groupId);
-                Mono<List<Integer>> response = webClientBuilder.build().get()
-                        .uri(url)
-                        .exchangeToMono(clientResponse -> {
-                            if (clientResponse.statusCode().isError()) {
-                                System.out.println("ERROR: Users by group");
-                                return Mono.just(List.of());
+                String urlGroupName = String.format("http://apigateway/api/v1/groups/%s", groupId);
+                groupName = webClientBuilder.build().get()
+                        .uri(urlGroupName)
+                        .exchangeToMono(response -> {
+                            if (response.statusCode().equals(HttpStatus.OK)) {
+                                return response.bodyToMono(JsonNode.class);
                             } else {
-                                return clientResponse.bodyToMono(new ParameterizedTypeReference<List<Integer>>() {
-                                });
+                                return Mono.empty();
                             }
-                        });
-                userIds = response.block();
-                System.out.println("Users by group: " + userIds);
+                        })
+                        .map(jsonNode -> jsonNode.get("name").asText())
+                        .blockOptional()
+                        .orElse("Unknown Group");
             } catch (Exception e) {
-                System.out.println("Error in getUsersByGroup method: " + e);
-                userIds = List.of();
+                System.out.println("Error fetching group name: " + e.getMessage());
+                groupName = "Unknown Group";
             }
 
-            if (userIds != null) {
-                for (Integer userId : userIds) {
-                    NotificationDTO notificationDTO = new NotificationDTO();
-                    String groupName = "";
-                    try {
-                        String urlGroupName = String.format("http://apigateway/api/v1/groups/%s", groupId);
-                        groupName = webClientBuilder.build().get().uri(urlGroupName)
-                                .exchangeToMono(response -> {
-                                    if (response.statusCode().equals(HttpStatus.OK)) {
-                                        return response.bodyToMono(JsonNode.class);
-                                    } else {
-                                        return Mono.empty();
-                                    }
-                                }).map(jsonNode -> jsonNode.get("name").asText())
-                                .block();
-                    } catch (Exception e) {
-                        System.out.println("Error in Group Name : " + e);
-                    }
+            // Replace placeholder in message
+            message = message.replace("[group name]", groupName);
 
-                    message = message.replace("[group name]", groupName);
-                    notificationDTO.setMessage(message);
-                    notificationDTO.setUserId(userId);
-                    notificationDTO.setRead(false);
-                    try {
-                        sendNotification(notificationDTO,groupId,groupName);
-                    } catch (Exception e) {
-                        System.err.println("Error sending notification to user: " + userId + e.getMessage());
-                    }
+            // Send notifications to users, excluding excludeUserId
+            for (Integer userId : userIds) {
+                if (excludeUserId != null && userId.equals(excludeUserId)) {
+                    continue; // Skip the post's author
                 }
+                NotificationDTO notificationDTO = new NotificationDTO();
+                notificationDTO.setMessage(message);
+                notificationDTO.setUserId(userId);
+                notificationDTO.setRead(false);
+                try {
+                    sendNotification(notificationDTO, groupId, groupName);
+                } catch (Exception e) {
+                    System.err.println("Error sending notification to user " + userId + ": " + e.getMessage());
+                }
+            }
+        } else {
+            System.out.println("No users found for groupId: " + groupId);
+        }
+    }
+
+    public void sendNotificationToUsers(String message, List<Integer> userIds, Integer groupId) {
+        if (userIds == null || userIds.isEmpty()) {
+            System.out.println("No users to notify");
+            return;
+        }
+        System.out.println("Sending notifications to users: " + userIds);
+
+        // Get group name
+        String groupName = "";
+        try {
+            String urlGroupName = String.format("http://apigateway/api/v1/groups/%s", groupId);
+            groupName = webClientBuilder.build().get()
+                    .uri(urlGroupName)
+                    .exchangeToMono(response -> {
+                        if (response.statusCode().equals(HttpStatus.OK)) {
+                            return response.bodyToMono(JsonNode.class);
+                        } else {
+                            return Mono.empty();
+                        }
+                    })
+                    .map(jsonNode -> jsonNode.get("name").asText())
+                    .blockOptional()
+                    .orElse("Unknown Group");
+        } catch (Exception e) {
+            System.out.println("Error fetching group name: " + e.getMessage());
+            groupName = "Unknown Group";
+        }
+
+        // Replace placeholder in message
+        message = message.replace("[group name]", groupName);
+
+        // Send notifications to specified users
+        for (Integer userId : userIds) {
+            NotificationDTO notificationDTO = new NotificationDTO();
+            notificationDTO.setMessage(message);
+            notificationDTO.setUserId(userId);
+            notificationDTO.setRead(false);
+            try {
+                sendNotification(notificationDTO, groupId, groupName);
+            } catch (Exception e) {
+                System.err.println("Error sending notification to user " + userId + ": " + e.getMessage());
             }
         }
     }

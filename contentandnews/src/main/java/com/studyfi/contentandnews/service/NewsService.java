@@ -10,14 +10,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.http.HttpStatus;
+import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import reactor.core.publisher.Mono;
 import java.util.Map;
-import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +26,7 @@ public class NewsService {
     private NewsRepo newsRepo;
 
     @Autowired
-    private CloudinaryService cloudinaryService; // Service to handle file upload
+    private CloudinaryService cloudinaryService;
 
     @Autowired
     private WebClient.Builder webClientBuilder;
@@ -50,7 +49,6 @@ public class NewsService {
                 .block();
     }
 
-
     // Method to post news
     public News postNews(String headline, String contentText, String author, List<Integer> groupIds, MultipartFile imageFile) throws IOException {
         validateGroups(groupIds);
@@ -68,24 +66,34 @@ public class NewsService {
             news.setImageUrl(imageUrl);
         }
 
+        // Save the news entry to the database
         News savedNews = newsRepo.save(news);
 
-        try{
-            System.out.println("Sending notification to group with message: New news: " + headline + ", for groups: " + groupIds.stream().map(Object::toString).collect(Collectors.joining(", ")));
-            Map<String, Object> notificationPayload = new HashMap<>();
-            notificationPayload.put("message", "New news: " + headline);
-            notificationPayload.put("groupIds", groupIds);
+        // Send notification for each group
+        for (Integer groupId : groupIds) {
+            try {
+                System.out.println("Sending notification to group " + groupId + " with message: New news: " + headline);
+                Map<String, Object> notificationPayload = new HashMap<>();
+                notificationPayload.put("message", "New news: " + headline + ", by " + author);
+                notificationPayload.put("groupId", groupId);
+                // Note: excludeUserId is not included since author is a string, not a user ID
+                // Later implementation - map author to a user ID, add it here as notificationPayload.put("excludeUserId", authorUserId);
 
-            webClientBuilder.build().post()
-                    .uri(notificationBaseUrl + "/api/v1/notifications/addnotification")
-                    .bodyValue(notificationPayload)
-                    .retrieve().bodyToMono(Void.class).block();
-        }catch (Exception e) {
-            System.err.println("Error sending notification: " + e.getMessage());
+                webClientBuilder.build().post()
+                        .uri(notificationBaseUrl + "/api/v1/notifications/addnotification")
+                        .bodyValue(notificationPayload)
+                        .retrieve()
+                        .onStatus(status -> status.isError(),
+                                response -> response.bodyToMono(String.class)
+                                        .map(body -> new RuntimeException("Failed to send notification: " + body)))
+                        .bodyToMono(Void.class)
+                        .block();
+            } catch (Exception e) {
+                System.err.println("Error sending notification for group " + groupId + ": " + e.getMessage());
+            }
         }
 
-        // Save the news entry to the database
-        return newsRepo.save(news);
+        return savedNews;
     }
 
     // Get all news for a particular group

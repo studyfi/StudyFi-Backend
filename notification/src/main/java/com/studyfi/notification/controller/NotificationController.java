@@ -8,29 +8,53 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin
 @RequestMapping("/api/v1/notifications")
 public class NotificationController {
+
     @Autowired
     private NotificationService notificationService;
 
     @GetMapping("/getnotifications")
-    public List<NotificationDTO> getNotifications(){
+    public List<NotificationDTO> getNotifications() {
         return notificationService.getAllNotifications();
     }
+
     @PostMapping("/addnotification")
-    public void addNotification(@RequestBody java.util.Map<String, Object> payload){
-        notificationService.sendNotificationToGroup((String) payload.get("message"), (List<Integer>) payload.get("groupIds"));
+    public void addNotification(@RequestBody Map<String, Object> payload) {
+        String message = (String) payload.get("message");
+        Integer groupId = (Integer) payload.get("groupId");
+        Integer excludeUserId = (Integer) payload.get("excludeUserId");
+
+        if (message == null || groupId == null) {
+            throw new IllegalArgumentException("Message and groupId are required");
+        }
+
+        notificationService.sendNotificationToGroup(message, groupId, excludeUserId);
+    }
+
+    @PostMapping("/addnotification/users")
+    public void addNotificationForUsers(@RequestBody Map<String, Object> payload) {
+        String message = (String) payload.get("message");
+        List<Integer> userIds = (List<Integer>) payload.get("userIds");
+        Integer groupId = (Integer) payload.get("groupId");
+
+        if (message == null || userIds == null || groupId == null) {
+            throw new IllegalArgumentException("Message, userIds, and groupId are required");
+        }
+
+        notificationService.sendNotificationToUsers(message, userIds, groupId);
     }
 
     @GetMapping("/getnotifications/{userId}")
-    public java.util.Map<String, List<NotificationDTO>> getUserNotifications(@PathVariable Integer userId) {
+    public Map<String, List<NotificationDTO>> getUserNotifications(@PathVariable Integer userId) {
         List<NotificationDTO> allNotifications = notificationService.getUserNotifications(userId);
         List<NotificationDTO> readNotifications = allNotifications.stream().filter(NotificationDTO::isRead).toList();
         List<NotificationDTO> unreadNotifications = allNotifications.stream().filter(notificationDTO -> !notificationDTO.isRead()).toList();
-        java.util.Map<String, List<NotificationDTO>> result = new java.util.HashMap<>();
+        Map<String, List<NotificationDTO>> result = new HashMap<>();
         result.put("readNotifications", readNotifications);
         result.put("unreadNotifications", unreadNotifications);
         return result;
@@ -42,9 +66,9 @@ public class NotificationController {
     }
 
     @PostMapping("/markallasread/{userId}")
-    public java.util.Map<String, String> markAllAsRead(@PathVariable Integer userId) {
+    public Map<String, String> markAllAsRead(@PathVariable Integer userId) {
         notificationService.markAllAsRead(userId);
-        java.util.Map<String, String> result = new HashMap<>();
+        Map<String, String> result = new HashMap<>();
         result.put("message", "All notifications marked as read");
         return result;
     }

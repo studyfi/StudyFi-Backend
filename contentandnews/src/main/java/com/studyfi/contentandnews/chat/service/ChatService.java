@@ -83,16 +83,11 @@ public class ChatService {
         postDTO.setLikeCount(0);
         postDTO.setCommentCount(0);
 
-        // Send notification to all users in the group except the post author
-        List<Integer> userIds = getUsersFromGroup(post.getGroupId()).stream()
-                .filter(user -> user != null && user.getId() != null && !user.getId().equals(post.getUserId()))
-                .map(UserDTO::getId)
-                .toList();
-        System.out.println("Users to notify: " + userIds);
+        // Send notification to all users in the group, excluding the post author
         String message = String.format("New Post: by %s, in %s",
                 postDTO.getUser().getName() != null ? postDTO.getUser().getName() : "Unknown User",
                 getGroupName(postDTO.getGroupId()));
-        sendNotificationToGroup(message, userIds);
+        sendNotificationToGroup(message, postDTO.getGroupId(), post.getUserId());
 
         return postDTO;
     }
@@ -158,8 +153,37 @@ public class ChatService {
                 getGroupName(post.getGroupId()),
                 commentDTO.getContent().substring(0, Math.min(commentDTO.getContent().length(), 20)));
 
-        sendNotificationToGroup(message, userIds.stream().toList());
+        sendNotificationToUsers(message, userIds.stream().toList(), post.getGroupId());
         return commentDTO;
+    }
+
+    private void sendNotificationToUsers(String message, List<Integer> userIds, Integer groupId) {
+        if (userIds == null || userIds.isEmpty()) {
+            System.out.println("No users to notify");
+            return;
+        }
+        System.out.println("Users to notify: " + userIds);
+        try {
+            String fullUrl = notificationBaseUrl + "/api/v1/notifications/addnotification/users";
+            System.out.println("Sending notification to: " + fullUrl);
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("message", message);
+            payload.put("userIds", userIds);
+            payload.put("groupId", groupId); // Include groupId for context
+            webClientBuilder.build().post()
+                    .uri(fullUrl)
+                    .bodyValue(payload)
+                    .retrieve()
+                    .onStatus(status -> status.equals(HttpStatus.BAD_REQUEST) || status.equals(HttpStatus.NOT_FOUND),
+                            response -> response.bodyToMono(String.class)
+                                    .map(body -> new IllegalStateException("Failed to send notification, response: " + body)))
+                    .bodyToMono(Void.class)
+                    .block();
+        } catch (IllegalStateException e) {
+            System.out.println("Error sending notification: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error sending notification: " + e.getMessage());
+        }
     }
 
     public CommentDTO getComment(Integer commentId) {
@@ -368,19 +392,21 @@ public class ChatService {
         }
     }
 
-    private void sendNotificationToGroup(String message, List<Integer> userIds) {
-        if (userIds == null || userIds.isEmpty()) {
-            System.out.println("No users to notify");
+    private void sendNotificationToGroup(String message, Integer groupId, Integer excludeUserId) {
+        if (groupId == null) {
+            System.out.println("Group ID is null, cannot send notification");
             return;
         }
-        System.out.println("Users to notify: " + userIds);
-        // Use the correct notification endpoint
+        System.out.println("Sending notification for group: " + groupId);
         try {
             String fullUrl = notificationBaseUrl + "/api/v1/notifications/addnotification";
             System.out.println("Sending notification to: " + fullUrl);
             Map<String, Object> payload = new HashMap<>();
             payload.put("message", message);
-            payload.put("groupIds", userIds); // Assuming userIds are treated as groupIds in notification service
+            payload.put("groupId", groupId); // Send the single group ID
+            if (excludeUserId != null) {
+                payload.put("excludeUserId", excludeUserId); // Exclude the post's author
+            }
             webClientBuilder.build().post()
                     .uri(fullUrl)
                     .bodyValue(payload)
